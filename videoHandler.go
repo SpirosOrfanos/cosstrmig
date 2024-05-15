@@ -30,7 +30,7 @@ func videos() {
 	for k, v := range aggregatedArticles {
 
 		itm := VideoComponent{
-			VideoID:     v[0].Kw,
+			VideoID:     "",
 			Description: v[0].ContentHtml,
 			Component:   "reusables.help-video-item",
 		}
@@ -50,7 +50,7 @@ func videos() {
 		}
 
 		itm2 := VideoComponent{
-			VideoID:     v[1].Kw,
+			VideoID:     "",
 			Description: v[1].ContentHtml,
 			Component:   "reusables.help-video-item",
 		}

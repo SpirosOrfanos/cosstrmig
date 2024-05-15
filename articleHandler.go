@@ -30,8 +30,11 @@ func articles() {
 			aggregatedArticles[k] = append(aggregatedArticles[k], v)
 		}
 	}
-
+	_, videoArticles := parseVideoCategories()
 	for k, v := range aggregatedArticles {
+		if _, ok := videoArticles[k]; ok {
+			continue
+		}
 		var helpArticle HelpArticle
 		if strings.Contains(v[0].ContentHtml, "toggle-content") {
 			wraper := handleToggle(v[0].ContentHtml)
@@ -134,6 +137,9 @@ func articles() {
 	savedArticles := make(map[string][]HelpArticle)
 
 	for key, rts := range aggregatedSaveArticles {
+		if _, ok := videoArticles[key]; ok {
+			continue
+		}
 		newArticles := make([]HelpArticle, 0)
 		res, _ := adapter.Create(rts[0])
 		newArticles = append(newArticles, HelpArticle{

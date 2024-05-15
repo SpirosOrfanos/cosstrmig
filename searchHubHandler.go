@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func createMigration() {
+func createMigration(pi string) {
 	englishArticles := parseProducts("en")
 	greekArticles := parseProducts("el")
 	aggregatedArticles := make(map[string][]Article)
@@ -68,28 +68,120 @@ func createMigration() {
 	}
 
 	_, categoryArticles := parseArticleCategories()
-
+	_, videoArticles := parseVideoCategories()
 	stackEl := lls.New()
 	stackEn := lls.New()
 	for k, vals := range aggregatedSaveArticles {
-		if catd, ok := categoryArticles[k]; ok {
-			for _, artic := range vals {
-				if artic.Locale == "en" {
-					addItemToList(k, artic, stackEn, catd)
-				} else {
-					addItemToList(k, artic, stackEl, catd)
-				}
+		if _, ok2 := videoArticles[k]; ok2 {
+			//fmt.Println("video article")
+			//continue
+		} else {
+			if catd, ok := categoryArticles[k]; ok {
+				for _, artic := range vals {
+					if artic.Locale == "en" {
+						addItemToList(k, artic, stackEn, catd)
+					} else {
+						addItemToList(k, artic, stackEl, catd)
+					}
 
+				}
 			}
+		}
+
+	}
+
+	writeToFile(stackEl, "el", pi)
+	writeToFile(stackEn, "en", pi)
+
+}
+
+func createMigrationVideo(pi string) {
+	englishArticles := parseProducts("en")
+	greekArticles := parseProducts("el")
+	aggregatedArticles := make(map[string][]Article)
+	aggregatedSaveArticles := make(map[string][]HelpArticleRaw)
+
+	for k, v := range greekArticles {
+		_, ok := aggregatedArticles[k]
+		if !ok {
+			aggregatedArticles[k] = make([]Article, 0)
+			aggregatedArticles[k] = append(aggregatedArticles[k], v)
+		} else {
+			aggregatedArticles[k] = append(aggregatedArticles[k], v)
 		}
 	}
 
-	writeToFile(stackEl, "el")
-	writeToFile(stackEn, "en")
+	for k, v := range englishArticles {
+		_, ok := aggregatedArticles[k]
+		if !ok {
+			aggregatedArticles[k] = make([]Article, 0)
+			aggregatedArticles[k] = append(aggregatedArticles[k], v)
+		} else {
+			aggregatedArticles[k] = append(aggregatedArticles[k], v)
+		}
+	}
+
+	for k, v := range aggregatedArticles {
+		var helpArticle HelpArticleRaw
+
+		helpArticle = HelpArticleRaw{
+			Id:          nil,
+			Title:       v[0].Title,
+			Keywords:    v[0].Keywords,
+			Locale:      v[0].Locale,
+			Reusables:   contentHtml(v[0].Title, v[0].ContentHtml),
+			ArticleId:   v[0].ArticleId,
+			ReferenceId: k,
+		}
+		aggregatedSaveArticles[k] = make([]HelpArticleRaw, 0)
+		aggregatedSaveArticles[k] = append(aggregatedSaveArticles[k], helpArticle)
+		if len(v) == 1 {
+			continue
+		}
+
+		helpArticle2 := HelpArticleRaw{
+			Id:          nil,
+			Title:       v[1].Title,
+			Keywords:    v[1].Keywords,
+			Locale:      v[1].Locale,
+			Reusables:   contentHtml(v[1].Title, v[1].ContentHtml),
+			ArticleId:   v[1].ArticleId,
+			ReferenceId: k,
+		}
+
+		artV := make([]HelpArticleRaw, 0)
+		artV = append(artV, aggregatedSaveArticles[k][0])
+		artV = append(artV, helpArticle2)
+		aggregatedSaveArticles[k] = artV
+	}
+
+	//_, categoryArticles := parseArticleCategories()
+	_, videoArticles := parseVideoCategories()
+	stackEl := lls.New()
+	stackEn := lls.New()
+	for k, vals := range aggregatedSaveArticles {
+		if vss, ok2 := videoArticles[k]; ok2 {
+			for _, artic := range vals {
+				if artic.Locale == "en" {
+					addItemToList(k, artic, stackEn, vss)
+				} else {
+					addItemToList(k, artic, stackEl, vss)
+				}
+
+			}
+		} else {
+
+		}
+
+	}
+
+	writeToFile(stackEl, "el", pi)
+	writeToFile(stackEn, "en", pi)
 
 }
-func writeToFile(stack *lls.Stack, lang string) {
-	filename := lang + ".xlsx"
+
+func writeToFile(stack *lls.Stack, lang string, pi string) {
+	filename := lang + "" + pi + ".xlsx"
 	f := excelize.NewFile()
 	_, err := f.NewSheet("sheet1")
 	if err != nil {
@@ -110,7 +202,7 @@ func writeToFile(stack *lls.Stack, lang string) {
 
 	for ind, v := range stack.Values() {
 		itm := v.(XlsItem)
-		
+
 		row := ind + 2
 		f.SetCellValue("Sheet1", fmt.Sprintf("%s%d", "A", row), itm.doc_key)
 		f.SetCellValue("Sheet1", fmt.Sprintf("%s%d", "B", row), itm.name)

@@ -1,5 +1,8 @@
 package main
 
 func main() {
-	createMigration()
+	//articles()
+	videos()
+	//createMigration("article")
+	//createMigrationVideo("video")
 }
