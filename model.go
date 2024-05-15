@@ -103,6 +103,17 @@ type HelpArticle struct {
 	HelpArticleCategories []string    `json:"help_article_categories,omitempty"`
 }
 
+type HelpArticleRaw struct {
+	Id                    *int     `json:"id,omitempty"`
+	Title                 string   `json:"title,omitempty"`
+	Keywords              string   `json:"keywords,omitempty"`
+	Locale                string   `json:"locale,omitempty"`
+	Reusables             string   `json:"reusables,omitempty"`
+	ArticleId             string   `json:"articleId,omitempty"`
+	ReferenceId           string   `json:"referenceId,omitempty"`
+	HelpArticleCategories []string `json:"help_article_categories,omitempty"`
+}
+
 type Reusable struct {
 	Title     string `json:"title,omitempty"`
 	Body      string `json:"body,omitempty"`

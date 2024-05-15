@@ -31,12 +31,7 @@ func articles() {
 		}
 	}
 
-	//counter := 0
 	for k, v := range aggregatedArticles {
-		/*if counter == 100 {
-			break
-		}
-		counter++*/
 		var helpArticle HelpArticle
 		if strings.Contains(v[0].ContentHtml, "toggle-content") {
 			wraper := handleToggle(v[0].ContentHtml)
@@ -137,6 +132,7 @@ func articles() {
 	}
 	adapter := NewAdapter()
 	savedArticles := make(map[string][]HelpArticle)
+
 	for key, rts := range aggregatedSaveArticles {
 		newArticles := make([]HelpArticle, 0)
 		res, _ := adapter.Create(rts[0])
