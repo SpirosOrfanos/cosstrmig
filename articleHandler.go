@@ -1,0 +1,252 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+func articles() {
+	englishArticles := parseProducts("en")
+	greekArticles := parseProducts("el")
+	aggregatedArticles := make(map[string][]Article)
+	aggregatedSaveArticles := make(map[string][]HelpArticle)
+
+	for k, v := range greekArticles {
+		_, ok := aggregatedArticles[k]
+		if !ok {
+			aggregatedArticles[k] = make([]Article, 0)
+			aggregatedArticles[k] = append(aggregatedArticles[k], v)
+		} else {
+			aggregatedArticles[k] = append(aggregatedArticles[k], v)
+		}
+	}
+
+	for k, v := range englishArticles {
+		_, ok := aggregatedArticles[k]
+		if !ok {
+			aggregatedArticles[k] = make([]Article, 0)
+			aggregatedArticles[k] = append(aggregatedArticles[k], v)
+		} else {
+			aggregatedArticles[k] = append(aggregatedArticles[k], v)
+		}
+	}
+
+	//counter := 0
+	for k, v := range aggregatedArticles {
+		/*if counter == 100 {
+			break
+		}
+		counter++*/
+		var helpArticle HelpArticle
+		if strings.Contains(v[0].ContentHtml, "toggle-content") {
+			wraper := handleToggle(v[0].ContentHtml)
+			mItems := make([]ToggleItem, 0)
+			for _, v := range wraper.items {
+				mItems = append(mItems, ToggleItem{
+					Title: v.title,
+					Body:  v.items,
+				})
+			}
+			toggle := Toggle{
+				Description: wraper.description,
+				Component:   "reusables.toggles",
+				Items:       mItems,
+			}
+			toggles := []Toggle{toggle}
+
+			helpArticle = HelpArticle{
+				Id:          nil,
+				Title:       v[0].Title,
+				Keywords:    v[0].Keywords,
+				Locale:      v[0].Locale,
+				Reusables:   toggles,
+				ArticleId:   v[0].ArticleId,
+				ReferenceId: k,
+			}
+
+		} else {
+			itm := Reusable{
+				Title:     v[0].Title,
+				Body:      v[0].ContentHtml,
+				Component: "reusables.html-reusable",
+			}
+			inter := []Reusable{itm}
+			helpArticle = HelpArticle{
+				Id:          nil,
+				Title:       v[0].Title,
+				Keywords:    v[0].Keywords,
+				Locale:      v[0].Locale,
+				Reusables:   inter,
+				ArticleId:   v[0].ArticleId,
+				ReferenceId: k,
+			}
+		}
+		aggregatedSaveArticles[k] = make([]HelpArticle, 0)
+		aggregatedSaveArticles[k] = append(aggregatedSaveArticles[k], helpArticle)
+		if len(v) == 1 {
+			continue
+		}
+		if strings.Contains(v[1].ContentHtml, "toggle-content") {
+
+			wraper := handleToggle(v[1].ContentHtml)
+			mItems := make([]ToggleItem, 0)
+			for _, v := range wraper.items {
+				mItems = append(mItems, ToggleItem{
+					Title: v.title,
+					Body:  v.items,
+				})
+			}
+			toggle := Toggle{
+				Description: wraper.description,
+				Component:   "reusables.toggles",
+				Items:       mItems,
+			}
+			toggles := []Toggle{toggle}
+			helpArticle = HelpArticle{
+				Id:          nil,
+				Title:       v[1].Title,
+				Keywords:    v[1].Keywords,
+				Locale:      v[1].Locale,
+				Reusables:   toggles,
+				ArticleId:   v[1].ArticleId,
+				ReferenceId: k,
+			}
+
+		} else {
+			itm := Reusable{
+				Title:     v[1].Title,
+				Body:      v[1].ContentHtml,
+				Component: "reusables.html-reusable",
+			}
+			inter := []Reusable{itm}
+			helpArticle = HelpArticle{
+				Id:          nil,
+				Title:       v[1].Title,
+				Keywords:    v[1].Keywords,
+				Locale:      v[1].Locale,
+				Reusables:   inter,
+				ArticleId:   v[1].ArticleId,
+				ReferenceId: k,
+			}
+		}
+
+		artV := make([]HelpArticle, 0)
+		artV = append(artV, aggregatedSaveArticles[k][0])
+		artV = append(artV, helpArticle)
+		aggregatedSaveArticles[k] = artV
+	}
+	adapter := NewAdapter()
+	savedArticles := make(map[string][]HelpArticle)
+	for key, rts := range aggregatedSaveArticles {
+		newArticles := make([]HelpArticle, 0)
+		res, _ := adapter.Create(rts[0])
+		newArticles = append(newArticles, HelpArticle{
+			Id:          &res.Data.Id,
+			ReferenceId: rts[0].ReferenceId,
+			Locale:      rts[0].Locale,
+		})
+		if len(rts) > 1 {
+			res2, _ := adapter.Localization(rts[1], res.Data.Id)
+			newArticles = append(newArticles, HelpArticle{
+				Id:          &res2.Id,
+				ReferenceId: rts[1].ReferenceId,
+				Locale:      rts[1].Locale,
+			})
+		}
+		savedArticles[key] = newArticles
+	}
+	categories, categoryArticles := parseArticleCategories()
+	categoriesSavedEl := make(map[string]int)
+	categoriesSavedEn := make(map[string]int)
+	for cat, catv := range categories {
+		nc := HelpArticleCategory{
+			Name:        catv.name,
+			CategoryId:  catv.code,
+			Description: catv.name,
+			Locale:      "el",
+		}
+		res, _ := adapter.CreateHelpArticleCategory(nc)
+		categoriesSavedEl[cat] = res.Data.Id
+		ncEn := HelpArticleCategory{
+			Name:        catv.name,
+			CategoryId:  catv.code,
+			Description: catv.name,
+			Locale:      "en",
+		}
+		res2, _ := adapter.LocalizationsHelpArticleCategory(ncEn, res.Data.Id)
+		categoriesSavedEn[cat] = res2.Id
+	}
+
+	savedArticlesEl := make(map[string]HelpArticle)
+	savedArticlesEn := make(map[string]HelpArticle)
+	for k, v := range savedArticles {
+		for _, ar := range v {
+			if ar.Locale == "el" {
+				savedArticlesEl[k] = ar
+			}
+			if ar.Locale == "en" {
+				savedArticlesEn[k] = ar
+			}
+		}
+	}
+	for cat, catv := range categories {
+		if catv.childCategories != nil || catv.parentCategories != nil {
+			elId, _ := categoriesSavedEl[cat]
+			enId, _ := categoriesSavedEn[cat]
+			elIdsP := make([]string, 0)
+			enIdsP := make([]string, 0)
+
+			elIdsC := make([]string, 0)
+			enIdsC := make([]string, 0)
+			for _, v := range catv.parentCategories.Values() {
+				if v1, ok := categoriesSavedEl[fmt.Sprintf("%s", v)]; ok {
+					elIdsP = append(elIdsP, fmt.Sprintf("%d", v1))
+				}
+				if v1, ok := categoriesSavedEn[fmt.Sprintf("%s", v)]; ok {
+					enIdsP = append(enIdsP, fmt.Sprintf("%d", v1))
+				}
+			}
+			for _, v := range catv.childCategories.Values() {
+				if v1, ok := categoriesSavedEl[fmt.Sprintf("%s", v)]; ok {
+					elIdsC = append(elIdsC, fmt.Sprintf("%d", v1))
+				}
+				if v1, ok := categoriesSavedEn[fmt.Sprintf("%s", v)]; ok {
+					enIdsC = append(enIdsC, fmt.Sprintf("%d", v1))
+				}
+			}
+			adapter.UpdateHelpArticleCategory(HelpArticleCategory{
+				ChildCategories:  elIdsC,
+				ParentCategories: elIdsP,
+			}, elId)
+			adapter.UpdateHelpArticleCategory(HelpArticleCategory{
+				ChildCategories:  enIdsC,
+				ParentCategories: enIdsP,
+			}, enId)
+
+		}
+	}
+	for articleId, categoryCodes := range categoryArticles {
+		if elId, ok := savedArticlesEl[articleId]; ok {
+			categoryIds := make([]string, 0)
+			for _, categoryCode := range categoryCodes {
+				if catgr, ok := categoriesSavedEn[categoryCode]; ok {
+					categoryIds = append(categoryIds, fmt.Sprintf("%d", catgr))
+				}
+			}
+			adapter.UpdateHelpArticle(HelpArticle{
+				HelpArticleCategories: categoryIds,
+			}, *elId.Id)
+		}
+		if enId, ok := savedArticlesEn[articleId]; ok {
+			categoryIds := make([]string, 0)
+			for _, categoryCode := range categoryCodes {
+				if catgr, ok := categoriesSavedEn[categoryCode]; ok {
+					categoryIds = append(categoryIds, fmt.Sprintf("%d", catgr))
+				}
+			}
+			adapter.UpdateHelpArticle(HelpArticle{
+				HelpArticleCategories: categoryIds,
+			}, *enId.Id)
+		}
+	}
+}

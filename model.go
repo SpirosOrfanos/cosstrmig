@@ -93,13 +93,14 @@ type HelpArticleWrapper struct {
 	Data HelpArticle `json:"data,omitempty"`
 }
 type HelpArticle struct {
-	Id          *int        `json:"id,omitempty"`
-	Title       string      `json:"title,omitempty"`
-	Keywords    string      `json:"keywords,omitempty"`
-	Locale      string      `json:"locale,omitempty"`
-	Reusables   interface{} `json:"reusables,omitempty"`
-	ArticleId   string      `json:"articleId,omitempty"`
-	ReferenceId string      `json:"referenceId,omitempty"`
+	Id                    *int        `json:"id,omitempty"`
+	Title                 string      `json:"title,omitempty"`
+	Keywords              string      `json:"keywords,omitempty"`
+	Locale                string      `json:"locale,omitempty"`
+	Reusables             interface{} `json:"reusables,omitempty"`
+	ArticleId             string      `json:"articleId,omitempty"`
+	ReferenceId           string      `json:"referenceId,omitempty"`
+	HelpArticleCategories []string    `json:"help_article_categories,omitempty"`
 }
 
 type Reusable struct {
@@ -123,22 +124,23 @@ type HelpVideoCategoryWrapper struct {
 	Data HelpVideoCategory `json:"data,omitempty"`
 }
 type HelpVideoCategory struct {
-	Name       string `json:"name,omitempty"`
-	CategoryId string `json:"categoryId,omitempty"`
-	Locale     string `json:"locale,omitempty"`
-	HelpVideos []int  `json:"help_videos,omitempty"`
+	Name       string   `json:"name,omitempty"`
+	CategoryId string   `json:"categoryId,omitempty"`
+	Locale     string   `json:"locale,omitempty"`
+	HelpVideos []string `json:"help_videos,omitempty"`
 }
 
 type HelpVideoWrapper struct {
-	Data HelpVideoCategory `json:"data,omitempty"`
+	Data HelpVideo `json:"data,omitempty"`
 }
 type HelpVideo struct {
-	Id          *int             `json:"id,omitempty"`
-	Title       string           `json:"name,omitempty"`
-	ArticleId   string           `json:"articleId,omitempty"`
-	ReferenceId string           `json:"referenceId,omitempty"`
-	Locale      string           `json:"locale,omitempty"`
-	Videos      []VideoComponent `json:"videos,omitempty"`
+	Id                  *int             `json:"id,omitempty"`
+	Title               string           `json:"title,omitempty"`
+	ArticleId           string           `json:"articleId,omitempty"`
+	ReferenceId         string           `json:"referenceId,omitempty"`
+	Locale              string           `json:"locale,omitempty"`
+	Videos              []VideoComponent `json:"videos,omitempty"`
+	HelpVideoCategories []string         `json:"help_video_categories,omitempty"`
 }
 
 type VideoComponent struct {
